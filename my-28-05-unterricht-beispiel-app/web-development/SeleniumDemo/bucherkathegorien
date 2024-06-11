@@ -1,0 +1,66 @@
+const { Builder, By, until } = require('selenium-webdriver');
+const fs = require('fs');
+const path = require('path');
+
+// Funktion zum Scrapen der Buchdaten von der aktuellen Seite
+async function scrapePage(driver) {
+    let books = [];
+    let bookContainers = await driver.findElements(By.className('product_pod'));
+
+    for (let container of bookContainers) {
+        let title = await container.findElement(By.tagName('h3')).findElement(By.tagName('a')).getAttribute('title');
+        let price = await container.findElement(By.className('price_color')).getText();
+        let availability = await container.findElement(By.className('availability')).getText();
+        books.push({
+            title: title,
+            price: price,
+            availability: availability.trim()
+        });
+    }
+
+    return books;
+}
+
+// Funktion zum Scrapen der Bücher einer bestimmten Kategorie
+async function scrapeCategory(driver, categoryUrl, categoryName) {
+    let allBooks = [];
+    await driver.get(categoryUrl);
+
+    while (true) {
+        let booksOnPage = await scrapePage(driver);
+        allBooks = allBooks.concat(booksOnPage);
+
+        try {
+            let nextButton = await driver.findElement(By.className('next'));
+            await nextButton.findElement(By.tagName('a')).click();
+            await driver.wait(until.elementLocated(By.className('product_pod')), 10000);
+        } catch (error) {
+            break; // Keine nächste Seite mehr vorhanden
+        }
+    }
+
+    const jsonPath = path.join(__dirname, `${categoryName}.json`);
+    fs.writeFileSync(jsonPath, JSON.stringify(allBooks, null, 2), 'utf-8');
+    console.log(`Scraping abgeschlossen. Daten sind in ${categoryName}.json gespeichert.`);
+}
+
+// Hauptfunktion zum Scrapen der Bücher aus mehreren Kategorien
+async function scrapeBooksToScrape() {
+    let driver = await new Builder().forBrowser('chrome').build();
+
+    try {
+        const categories = [
+            { url: 'http://books.toscrape.com/catalogue/category/books/travel_2/index.html', name: 'travel' },
+            { url: 'http://books.toscrape.com/catalogue/category/books/mystery_3/index.html', name: 'mystery' },
+            { url: 'http://books.toscrape.com/catalogue/category/books/fantasy_19/index.html', name: 'fantasy' }
+        ];
+
+        for (let category of categories) {
+            await scrapeCategory(driver, category.url, category.name);
+        }
+    } finally {
+        await driver.quit();
+    }
+}
+
+scrapeBooksToScrape();

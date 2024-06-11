@@ -1,0 +1,40 @@
+.App {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  text-align: center;
+}
+
+button {
+  font-size: 1.5em;
+  padding: 10px 20px;
+  margin: 20px;
+}
+
+input[type="checkbox"] {
+  transform: scale(1.5);
+  margin: 20px;
+}
+
+label {
+  font-size: 1.2em;
+}.rot {
+  background-color: red;
+  color: white;
+}
+
+.blau {
+  background-color: blue;
+  color: white;
+}
+
+.grau {
+  background-color: gray;
+  color: white;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
